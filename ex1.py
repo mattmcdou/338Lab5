@@ -32,46 +32,38 @@ class Stack:
     def is_empty(self):
         return self.top is None
 
-def parse_sexpr(tokens):
-    stack = Stack()
+def parse_expression(it):
+    numbers = Stack()
+    operators = Stack()
 
-    while tokens:
-        token = tokens.pop(0)
+    for token in it:
         if token.isdigit():
-            stack.push(int(token))
+            numbers.push(int(token))
         elif token in ['+', '-', '*', '/']:
-            operands = []
-            while not stack.is_empty() and isinstance(stack.peek(), int):
-                operands.append(stack.pop())
-            if token == '+':
-                stack.push(sum(operands))
-            elif token == '-':
-                stack.push(operands[0] - sum(operands[1:]))
-            elif token == '*':
-                result = 1
-                for operand in operands:
-                    result *= operand
-                stack.push(result)
-            elif token == '/':
-                stack.push(operands[0] / operands[1])
+            operators.push(token)
         elif token == '(':
-            # Start a new recursive call to parse the sub-expression
-            stack.push(parse_sexpr(tokens))
+            numbers.push(parse_expression(it))
         elif token == ')':
-            # End the current recursive call and return the result
-            if not stack.is_empty():
-                return stack.pop()
+            break
 
-    # Return the result of the entire expression
-    if not stack.is_empty():
-        return stack.pop()
-    else:
-        return None
+    while not operators.is_empty():
+        operator = operators.pop()
+        num2 = numbers.pop() # num2 should is first due to the nature of stacks being LIFO
+        num1 = numbers.pop()
+        if operator == '+':
+            numbers.push(num1 + num2)
+        elif operator == '-':
+            numbers.push(num1 - num2)
+        elif operator == '*':
+            numbers.push(num1 * num2)
+        elif operator == '/':
+            numbers.push(num1 / num2)
+
+    return numbers.pop()
 
 if len(sys.argv) > 1:
-    expr = [i for i in sys.argv[1]]
-    print(expr)
-    result = parse_sexpr(expr)
+    expr = iter(sys.argv[1])
+    result = parse_expression(expr)
     print(result)
 else:
     print("No command line parameter provided")
